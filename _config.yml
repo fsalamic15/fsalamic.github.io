@@ -1,4 +1,3 @@
-markdown: redcarpet
 name: Put name here
 exclude:
 - CONTRIBUTING.md

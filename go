@@ -24,8 +24,6 @@ rescue LoadError
   abort "Please add \"gem 'go_script'\" to your Gemfile"
 end
 
-
-
 extend GoScript
 check_ruby_version '2.2.4'
 

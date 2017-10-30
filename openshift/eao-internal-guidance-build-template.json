@@ -1,79 +1,104 @@
 {
-    "kind": "List",
-    "apiVersion": "v1",
-    "metadata": {},
-    "items": [
-        {
-            "kind": "ImageStream",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "eao-internal-guidance",
-                "creationTimestamp": null,
-                "labels": {
-                    "build": "eao-internal-guidance"
-                },
-                "annotations": {
-                    "openshift.io/generated-by": "OpenShiftNewBuild"
-                }
-            },
-            "spec": {},
-            "status": {
-                "dockerImageRepository": ""
-            }
-        },
-        {
-            "kind": "BuildConfig",
-            "apiVersion": "v1",
-            "metadata": {
-                "name": "eao-internal-guidance",
-                "creationTimestamp": null,
-                "labels": {
-                    "build": "eao-internal-guidance"
-                },
-                "annotations": {
-                    "openshift.io/generated-by": "OpenShiftNewBuild"
-                }
-            },
-            "spec": {
-                "triggers": [
-                    {
-                        "type": "ConfigChange"
-                    },
-                    {
-                        "type": "ImageChange",
-                        "imageChange": {}
-                    }
-                ],
-                "source": {
-                    "type": "Git",
-                    "git": {
-                        "uri": "git@github.com:bcgov-c/EAO-Internal-Guidance.git"
-                    },
-                    "sourceSecret":{
-                      "name":"eao-internal-ssh"
-                    }
-                },
-                "strategy": {
-                    "type": "Source",
-                    "sourceStrategy": {
-                        "from": {
-                            "kind": "ImageStreamTag",
-                            "name": "s2i-ruby-nodejs:latest"
-                        }
-                    }
-                },
-                "output": {
-                    "to": {
-                        "kind": "ImageStreamTag",
-                        "name": "eao-internal-guidance:latest"
-                    }
-                },
-                "resources": {},
-                "postCommit": {}
-            },
-            "status": {
-                "lastVersion": 0
-            }
-        }
-    ]
+	"kind": "Template",
+	"apiVersion": "v1",
+	"metadata": {
+		"name": "eguide",
+		"creationTimestamp": null
+	},
+	"objects": [{
+			"kind": "ImageStream",
+			"apiVersion": "v1",
+			"metadata": {
+				"name": "${NAME}",
+				"creationTimestamp": null,
+				"labels": {
+					"build": "${NAME}"
+				},
+				"annotations": {
+					"openshift.io/generated-by": "OpenShiftNewBuild"
+				}
+			},
+			"spec": {},
+			"status": {
+				"dockerImageRepository": ""
+			}
+		},
+		{
+			"kind": "BuildConfig",
+			"apiVersion": "v1",
+			"metadata": {
+				"name": "${NAME}",
+				"creationTimestamp": null,
+				"labels": {
+					"build": "${NAME}"
+				},
+				"annotations": {
+					"openshift.io/generated-by": "OpenShiftNewBuild"
+				}
+			},
+			"spec": {
+				"triggers": [{
+						"type": "ConfigChange"
+					},
+					{
+						"type": "ImageChange",
+						"imageChange": {}
+					}
+				],
+				"source": {
+					"type": "Git",
+					"git": {
+						"uri": "${SOURCE_REPOSITORY_URL}"
+					},
+					"sourceSecret": {
+						"name": "${SOURCE_SECRET}"
+					}
+				},
+				"strategy": {
+					"type": "Source",
+					"sourceStrategy": {
+						"from": {
+							"kind": "ImageStreamTag",
+							"name": "${BUILDER_IMAGESTREAM_TAG}:latest"
+						}
+					}
+				},
+				"output": {
+					"to": {
+						"kind": "ImageStreamTag",
+						"name": "${NAME}:latest"
+					}
+				},
+				"resources": {},
+				"postCommit": {}
+			},
+			"status": {
+				"lastVersion": 0
+			}
+		}
+	],
+	"parameters": [{
+			"name": "NAME",
+			"displayName": "Name",
+			"description": "The name assigned to all of the frontend objects defined in this template",
+			"required": true
+		},
+		{
+			"name": "BUILDER_IMAGESTREAM_TAG",
+			"displayName": "Builder ImageStreamTag",
+			"description": "The image stream tag (e.g. s2i-ruby-nodejs:latest) of the S2I image that should be used to build the application."
+		},
+		{
+			"name": "SOURCE_REPOSITORY_URL",
+			"displayName": "Git Repository URL",
+			"description": "The URL of the repository with your nginx configuration code.",
+			"required": true
+		},
+		{
+			"name": "SOURCE_SECRET",
+			"displayName": "Source Secret",
+			"description": "The source secret for the project.",
+			"required": true
+		}
+	]
 }
