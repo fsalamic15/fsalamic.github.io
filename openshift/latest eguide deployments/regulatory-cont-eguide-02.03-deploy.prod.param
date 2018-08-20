@@ -1,0 +1,13 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: the-application-name
+# JSON Template File: regulatory-cont-eguide-02-deploy.json
+#=========================================================
+# NAME=the-application-name
+# SOURCE_IMAGE_NAMESPACE=the-target-tools-project
+TAG_NAME=latest
+# APPLICATION_DOMAIN=
+# CPU_LIMIT=60m
+# MEMORY_LIMIT=512Mi
+# CPU_REQUEST=50m
+# MEMORY_REQUEST=256Mi

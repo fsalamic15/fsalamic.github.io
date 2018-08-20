@@ -1,0 +1,151 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "annotations": {
+      "description": "Build template for ${NAME}.",
+      "tags": "${name}"
+    },
+    "name": "${NAME}-build-template"
+  },
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Name",
+      "description": "The name assigned to all of the objects defined in this template.",
+      "required": true,
+      "value": "the-application-name"
+    },
+    {
+      "name": "GIT_REPO_URL",
+      "displayName": "Git Repo URL",
+      "description": "The URL to the Git repository containing the source code for the build.",
+      "required": true,
+      "value": "git@github.com:bcgov-c/the-application-name.git"
+    },
+    {
+      "name": "GIT_REF",
+      "displayName": "Git Reference",
+      "description": "The git reference or branch containing the source code for the build.",
+      "required": true,
+      "value": "master"
+    },    
+    {
+      "name": "SOURCE_CONTEXT_DIR",
+      "displayName": "Source Context Directory",
+      "description": "The directory containing the source code, if not the root of the repository.",
+      "required": false,
+      "value": ""
+    },
+    {
+      "name": "SOURCE_SECRET",
+      "displayName": "Source Secret",
+      "description": "The eguides are edited directly in bcgov-c which is not a public repo.  This is temporary until the move to cms-lite with GCPE.",
+      "required": true,
+      "value": ""
+    },
+    {
+      "name": "OUTPUT_IMAGE_TAG",
+      "displayName": "Output Image Tag",
+      "description": "The tag given to the built image.",
+      "required": true,
+      "value": "latest"
+    },
+    {
+      "name": "WEBHOOK_SECRET",
+      "displayName": "WebHook Secret",
+      "description": "The 16_CHAR_UNIQUE_TAG part of the https://console.pathfinder.gov.bc.ca:8443/oapi/v1/namespaces/mem-mmt-tools/buildconfigs/regulatory-cont-eguide/webhooks/16_CHAR_UNIQUE_TAG/github.  One can manually generate this (eg. '8kj943aar0f1d231') and the update the GitHub webhooks section with this value, as long as it matches what is here it will work.",
+      "required": true,
+      "value": "16_CHAR_UNIQUE_TAG"
+    }
+  ],
+  "objects": [
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "creationTimestamp": null,
+        "labels": {
+          "build": "${NAME}",
+          "app": "${NAME}"
+        },
+        "annotations": {
+          "openshift.io/generated-by": "OpenShiftNewBuild"
+        }
+      },
+      "spec": {
+        "lookupPolicy": {
+          "local": false
+        }
+      },
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "creationTimestamp": null,
+        "labels": {
+          "build": "${NAME}",
+          "app": "${NAME}"
+        },
+        "annotations": {
+          "openshift.io/generated-by": "OpenShiftNewBuild"
+        }
+      },
+      "spec": {
+        "triggers": [
+          {
+            "type": "GitHub",
+            "github": {
+              "secret": "${WEBHOOK_SECRET}"
+            }
+          },
+          {
+            "type": "ImageChange",
+            "imageChange": {}
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "source": {
+          "type": "Git",
+          "git": {
+            "uri": "${GIT_REPO_URL}"
+          },
+					"sourceSecret": {
+						"name": "${SOURCE_SECRET}"
+					},
+          "contextDir": "${SOURCE_CONTEXT_DIR}"
+        },
+        "strategy": {
+          "type": "Source",
+          "sourceStrategy": {
+            "from": {
+              "kind": "ImageStreamTag",
+              "namespace": "mem-mmt-tools",
+              "name": "s2i-ruby-nodejs:latest"
+            }
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${NAME}:${OUTPUT_IMAGE_TAG}"
+          }
+        },
+        "resources": {},
+        "postCommit": {},
+        "nodeSelector": null
+      },
+      "status": {
+        "lastVersion": 0
+      }
+    }
+  ]
+}

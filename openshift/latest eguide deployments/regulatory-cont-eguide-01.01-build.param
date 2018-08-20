@@ -1,0 +1,12 @@
+#=========================================================
+# OpenShift template parameters for:
+# Component: regulatory-cont-eguide
+# JSON Template File: regulatory-cont-eguide-01-build.json
+#=========================================================
+NAME=the-application-name
+GIT_REPO_URL=git@github.com:bcgov-c/the-application-name.git
+GIT_REF=master
+SOURCE_CONTEXT_DIR=
+SOURCE_SECRET=the-application-name-ssh
+OUTPUT_IMAGE_TAG=latest
+WEBHOOK_SECRET=16_CHAR_UNIQUE_TAG
