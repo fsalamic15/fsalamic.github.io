@@ -1,5 +1,7 @@
 source ./lib/extended-oc.sh
 
+# Source:  https://github.com/bcgov/jekyll-barebones/tree/master/openshift
+
 ARGS_FILE=00.01-refresh-all-openshift-projects.config
 
 # ====================================================================================
@@ -13,6 +15,7 @@ TOOLS_TEMPLATE_PARAMETERS_FILE=the-inputs-passed-in-to-the-tools-template-file
 DEV_PROJECT=the-development-environment-project
 DEV_TEMPLATE=the-template-file-to-be-applied-at-the-development-environment-project
 DEV_TEMPLATE_PARAMETERS_FILE=the-inputs-passed-in-to-the-development-environment-template-file
+DEV_NGINX_ID=the-next-sequentially-available-number-in-the-nginx-project-deployment-in-the-dev-project
 DEV_NGINX_NAME=the-existing-nginx-project-deployment-in-the-dev-project
 DEV_NGINX_PROXY=http://the-application-name:4000
 DEV_NGINX_USERNAME=the-one-username-everyone-using-this-eguide-will-share
@@ -20,6 +23,7 @@ DEV_NGINX_PASSWORD=the-one-password-everyone-using-this-eguide-will-share
 TEST_PROJECT=the-test-environment-project
 TEST_TEMPLATE=the-template-file-to-be-applied-at-the-test-environment-project
 TEST_TEMPLATE_PARAMETERS_FILE=the-inputs-passed-in-to-the-test-environment-template-file
+TEST_NGINX_ID=the-next-sequentially-available-number-in-the-nginx-project-deployment-in-the-test-project
 TEST_NGINX_NAME=existing-nginx-project-deployment-in-the-test-project
 TEST_NGINX_PROXY=http://the-application-name:4000
 TEST_NGINX_USERNAME=the-one-username-everyone-using-this-eguide-will-share
@@ -27,6 +31,7 @@ TEST_NGINX_PASSWORD=the-one-password-everyone-using-this-eguide-will-share
 PROD_PROJECT=the-production-environment-project
 PROD_TEMPLATE=the-template-file-to-be-applied-at-the-production-environment-project
 PROD_TEMPLATE_PARAMETERS_FILE=the-inputs-passed-in-to-the-production-environment-template-file
+PROD_NGINX_ID=the-next-sequentially-available-number-in-the-nginx-project-deployment-in-the-test-project
 PROD_NGINX_NAME=existing-nginx-project-deployment-in-the-prod-project
 PROD_NGINX_PROXY=http://the-application-name:4000
 PROD_NGINX_USERNAME=the-one-username-everyone-using-this-eguide-will-share
@@ -46,35 +51,38 @@ refreshAll() {
     local _dev_project=${5}
     local _dev_template=${6}
     local _dev_template_parameters_file=${7}
-    local _dev_nginx_name=${8}
-    local _dev_nginx_proxy=${9}
-    local _dev_nginx_username=${10}
-    local _dev_nginx_password=${11}
-    local _test_project=${12}
-    local _test_template=${13}
-    local _test_template_parameters_file=${14}
-    local _test_nginx_name=${15}
-    local _test_nginx_proxy=${16}
-    local _test_nginx_username=${17}
-    local _test_nginx_password=${18}
-    local _prod_project=${19}
-    local _prod_template=${20}
-    local _prod_template_parameters_file=${21}
-    local _prod_nginx_name=${22}
-    local _prod_nginx_proxy=${23}
-    local _prod_nginx_username=${24}
-    local _prod_nginx_password=${25}
+    local _dev_nginx_id=${8}
+    local _dev_nginx_name=${9}
+    local _dev_nginx_proxy=${10}
+    local _dev_nginx_username=${11}
+    local _dev_nginx_password=${12}
+    local _test_project=${13}
+    local _test_template=${14}
+    local _test_template_parameters_file=${15}
+    local _test_nginx_id=${16}
+    local _test_nginx_name=${17}
+    local _test_nginx_proxy=${18}
+    local _test_nginx_username=${19}
+    local _test_nginx_password=${20}
+    local _prod_project=${21}
+    local _prod_template=${22}
+    local _prod_template_parameters_file=${23}
+    local _prod_nginx_id=${24}
+    local _prod_nginx_name=${25}
+    local _prod_nginx_proxy=${26}
+    local _prod_nginx_username=${27}
+    local _prod_nginx_password=${28}
 
     if [ -z "${_application_name}" ] \
     || [ -z "${_tools_project}" ] || [ -z "${_tools_template}" ] || [ -z "${_tools_template_parameters_file}" ] \
     || [ -z "${_dev_project}" ] || [ -z "${_dev_template}" ] || [ -z "${_dev_template_parameters_file}" ] \
-    || [ -z "${_dev_nginx_name}" ] || [ -z "${_dev_nginx_proxy}" ] \
+    || [ -z "${_dev_nginx_id}" ] || [ -z "${_dev_nginx_name}" ] || [ -z "${_dev_nginx_proxy}" ] \
     || [ -z "${_dev_nginx_username}" ] || [ -z "${_dev_nginx_password}" ] \
     || [ -z "${_test_project}" ] || [ -z "${_test_template}" ] || [ -z "${_test_template_parameters_file}" ] \
-    || [ -z "${_test_nginx_name}" ] || [ -z "${_test_nginx_proxy}" ] \
+    || [ -z "${_test_nginx_id}" ] || [ -z "${_test_nginx_name}" ] || [ -z "${_test_nginx_proxy}" ] \
     || [ -z "${_test_nginx_username}" ] || [ -z "${_test_nginx_password}" ] \
     || [ -z "${_prod_project}" ] || [ -z "${_prod_template}" ] || [ -z "${_prod_template_parameters_file}" ] \
-    || [ -z "${_prod_nginx_name}" ] || [ -z "${_prod_nginx_proxy}" ] \
+    || [ -z "${_prod_nginx_id}" ] || [ -z "${_prod_nginx_name}" ] || [ -z "${_prod_nginx_proxy}" ] \
     || [ -z "${_prod_nginx_username}" ] || [ -z "${_prod_nginx_password}" ]; then
         echo -e \\n"refreshAll: Missing parameter! Parameters have to be present, even if empty."\\n
         exit 1
@@ -99,10 +107,11 @@ refreshAll() {
     local project=0
     local template=1
     local params=2
-    local nginx_name=3
-    local nginx_proxy=4
-    local nginx_username=5
-    local nginx_password=6
+    local nginx_id=3
+    local nginx_name=4
+    local nginx_proxy=5
+    local nginx_username=6
+    local nginx_password=7
 
     toolsEnv[$project]=${_tools_project/TOOLS_PROJECT=/}
     toolsEnv[$template]=${_tools_template/TOOLS_TEMPLATE=/}
@@ -115,6 +124,7 @@ refreshAll() {
     devEnv[$project]=${_dev_project/DEV_PROJECT=/}
     devEnv[$template]=${_dev_template/DEV_TEMPLATE=/}
     devEnv[$params]=${_dev_template_parameters_file/DEV_TEMPLATE_PARAMETERS_FILE=/}
+    devEnv[$nginx_id]=${_dev_nginx_id/DEV_NGINX_ID=/}
     devEnv[$nginx_name]=${_dev_nginx_name/DEV_NGINX_NAME=/}
     devEnv[$nginx_proxy]=${_dev_nginx_proxy/DEV_NGINX_PROXY=/}
     devEnv[$nginx_username]=${_dev_nginx_username/DEV_NGINX_USERNAME=/}
@@ -123,6 +133,7 @@ refreshAll() {
     testEnv[$project]=${_test_project/TEST_PROJECT=/}
     testEnv[$template]=${_test_template/TEST_TEMPLATE=/}
     testEnv[$params]=${_test_template_parameters_file/TEST_TEMPLATE_PARAMETERS_FILE=/}
+    testEnv[$nginx_id]=${_test_nginx_id/TEST_NGINX_ID=/}
     testEnv[$nginx_name]=${_test_nginx_name/TEST_NGINX_NAME=/}
     testEnv[$nginx_proxy]=${_test_nginx_proxy/TEST_NGINX_PROXY=/}
     testEnv[$nginx_username]=${_test_nginx_username/TEST_NGINX_USERNAME=/}
@@ -131,6 +142,7 @@ refreshAll() {
     prodEnv[$project]=${_prod_project/PROD_PROJECT=/}
     prodEnv[$template]=${_prod_template/PROD_TEMPLATE=/}
     prodEnv[$params]=${_prod_template_parameters_file/PROD_TEMPLATE_PARAMETERS_FILE=/}
+    prodEnv[$nginx_id]=${_prod_nginx_id/PROD_NGINX_ID=/}
     prodEnv[$nginx_name]=${_prod_nginx_name/PROD_NGINX_NAME=/}
     prodEnv[$nginx_proxy]=${_prod_nginx_proxy/PROD_NGINX_PROXY=/}
     prodEnv[$nginx_username]=${_prod_nginx_username/PROD_NGINX_USERNAME=/}
@@ -162,12 +174,12 @@ refreshAll() {
                 artifact_label="template"
             elif [ "${params}" -eq "${j}" ]; then
                 artifact_label="params"
+            elif [ "${nginx_id}" -eq "${j}" ]; then
+                artifact_label="nginx_id"
             elif [ "${nginx_name}" -eq "${j}" ]; then
                 artifact_label="nginx_name"
             elif [ "${nginx_proxy}" -eq "${j}" ]; then
                 artifact_label="nginx_proxy"
-            #elif [ "${nginx_authentication_type}" -eq "${j}" ]; then
-            #    artifact_label="nginx_authentication_type"
             elif [ "${nginx_username}" -eq "${j}" ]; then
                 artifact_label="nginx_username"
             elif [ "${nginx_password}" -eq "${j}" ]; then
@@ -205,15 +217,15 @@ refreshAll() {
         oc process -f ${current_project[$i,$template]} --param-file=${current_project[$i,$params]} -n ${current_project[$i,$project]} | oc create -f -
 
         if ! [ "${tools}" -eq "${i}" ]; then
-#            oc create configmap ${APPLICATION_NAME} -n ${current_project[$i,$project]}
-#            _tag_name=latest
+            #oc create configmap ${APPLICATION_NAME} -n ${current_project[$i,$project]}
+            #_tag_name=latest
             local _cli_output
             if [ "${prod}" -eq "${i}" ]; then
                 _cli_output=$(oc delete route ${APPLICATION_NAME} -n ${current_project[$i,$project]} 2>&1)
                 outputRelevantOnly "${_cli_output}"
             fi
-#            _cli_output=$(oc rollout ${_tag_name} ${_application_name} -n ${current_project[$i,$project]} 2>&1)
-#            outputRelevantOnly "${_cli_output}"
+            #_cli_output=$(oc rollout ${_tag_name} ${_application_name} -n ${current_project[$i,$project]} 2>&1)
+            #outputRelevantOnly "${_cli_output}"
         fi
 
         if [ -z "${current_project[$nginx_name]}" ] || [ -z "${current_project[$nginx_proxy]}" ] || [ -z "${current_project[$nginx_authentication_type]}" ] \
@@ -223,12 +235,14 @@ refreshAll() {
         checkNginxExists ${current_project[$nginx_name]}
 
         #oc set env dc/${current_project[$nginx_name]} --list -n ${current_project[$i,$project]}
-        #TODO: automate this to latest available number and check if more than 9
-        local _s2i_cred_num=2  #see usr/libexec/s2i/run for implementation
-        oc set env dc/${current_project[$nginx_name]} REGULATORY_CONTINUUM_EGUIDE_NGINX_PROXY=${current_project[$nginx_proxy]} \
-        HTTP_BASIC${_s2i_cred_num}="auth_basic \"Restricted Content\"; auth_basic_user_file /tmp/.htpasswd${_s2i_cred_num};" \
-        USERNAME${_s2i_cred_num}=${current_project[$nginx_username]} \
-        PASSWORD${_s2i_cred_num}=${current_project[$nginx_password]} \
+        
+        #see usr/libexec/s2i/run for implementation of the $nginx_id field.
+        #be aware it's fragile, so if you either reuse an existing number or skip a number it will not work.
+        #it must be sequential ascending
+        oc set env dc/${current_project[$nginx_name]} EGUIDE_NGINX_PROXY${current_project[$nginx_id]}=${current_project[$nginx_proxy]} \
+        HTTP_BASIC${current_project[$nginx_id]}="auth_basic \"Restricted Content\"; auth_basic_user_file /tmp/.htpasswd${current_project[$nginx_id]};" \
+        USERNAME${current_project[$nginx_id]}=${current_project[$nginx_username]} \
+        PASSWORD${current_project[$nginx_id]}=${current_project[$nginx_password]} \
          -n ${current_project[$i,$project]}
         #oc set env dc/${current_project[$nginx_name]} --list -n ${current_project[$i,$project]}
         
